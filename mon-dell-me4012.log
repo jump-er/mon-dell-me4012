@@ -1,0 +1,18 @@
+[36mINFO[0m[2023-07-14T23:58:46+03:00] test                                         
+[33mWARN[0m[2023-07-14T23:58:46+03:00] test2                                        
+time="2023-07-14T23:59:49+03:00" level=info msg=test
+time="2023-07-14T23:59:49+03:00" level=warning msg=test2
+time="2023-07-15T00:00:20+03:00" level=info msg=test
+time="2023-07-15T00:00:20+03:00" level=warning msg=test2
+{"level":"info","msg":"test","time":"2023-07-15T00:01:08+03:00"}
+{"level":"warning","msg":"test2","time":"2023-07-15T00:01:08+03:00"}
+{"level":"info","msg":"test","time":"2023-07-17T07:43:46+03:00"}
+{"level":"warning","msg":"test2","time":"2023-07-17T07:43:46+03:00"}
+{"level":"fatal","msg":"fail SSH dial: dial tcp 10.4.13.115:22: connect: network is unreachable","time":"2023-07-17T07:43:46+03:00"}
+{"level":"info","msg":"test","time":"2023-07-17T07:44:58+03:00"}
+{"level":"warning","msg":"test2","time":"2023-07-17T07:44:58+03:00"}
+{"level":"info","msg":"test","time":"2023-07-17T07:49:07+03:00"}
+{"level":"warning","msg":"test2","time":"2023-07-17T07:49:07+03:00"}
+{"level":"fatal","msg":"fail get knownhosts file: open : no such file or directory","time":"2023-07-17T07:55:28+03:00"}
+{"level":"fatal","msg":"fail get knownhosts file: open : no such file or directory","time":"2023-07-17T07:55:41+03:00"}
+{"level":"fatal","msg":"fail get knownhosts file: open ~/.ssh/known_hosts: no such file or directory","time":"2023-07-17T07:57:00+03:00"}

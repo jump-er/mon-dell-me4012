@@ -1,0 +1,8 @@
+---
+insecure_ignore_host_key: true
+knownhosts_file_path: "" #if insecure_ignore_host_key is false
+ssh:
+  user: "user"
+  password: "password"
+  host: "127.0.0.1"
+  port: 22
