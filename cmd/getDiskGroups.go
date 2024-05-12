@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/xml"
 	"fmt"
+	"mon-dell-me4012/config"
 	"strconv"
 
 	"golang.org/x/crypto/ssh"
@@ -40,32 +41,29 @@ type DiskGroups struct {
 }
 
 type singleDiskGroup struct {
-	Name   string `json:"{#NAME}"`
-	Size   int    `json:"{#SIZE}"`
-	Free   int    `json:"{#FREE}"`
-	Status string `json:"{#STATUS}"`
-	Health string `json:"{#HEALTH}"`
+	Name string `json:"{#NAME}"`
 }
 
 type totalDiskGroups struct {
-	Data []singleDiskGroup `json:"data"`
+	Data []any `json:"data"`
 }
 
-func GetDiskGroups(session *ssh.Session) (totalDiskGroups, error) {
-	buff, err := ExecCommandOnDevice(session, "show disk-groups")
+func DiscoveryDiskGroups(session *ssh.Session, c *config.Config) (totalDiskGroups, error) {
+	v, err := getRawData(session, "DiskGroups", "show disk-groups", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
-		return totalDiskGroups{}, fmt.Errorf("%v", err)
+		return totalDiskGroups{}, fmt.Errorf("%s", err)
 	}
 
-	var diskGroups DiskGroups
-	err = xml.Unmarshal([]byte(buff.String()), &diskGroups)
+	var XMLData DiskGroups = DiskGroups{}
+	err = xml.Unmarshal([]byte(v), &XMLData)
 	if err != nil {
-		return totalDiskGroups{}, fmt.Errorf("error XML unmarshal: %v", err)
+		return totalDiskGroups{}, fmt.Errorf("error XML unmarshal DiskGroups (discovery): %v", err)
 	}
 
+	var fakeSingleEntity fakeSingleEntity
 	var totalDiskGroups totalDiskGroups
 	var singleDiskGroup singleDiskGroup
-	for _, diskGroup := range diskGroups.OBJECT {
+	for _, diskGroup := range XMLData.OBJECT {
 		diskGroup.Name = diskGroup.PROPERTY[0].Text
 		if diskGroup.Name == "Success" {
 			continue
@@ -73,24 +71,47 @@ func GetDiskGroups(session *ssh.Session) (totalDiskGroups, error) {
 
 		singleDiskGroup.Name = diskGroup.PROPERTY[0].Text
 
-		i, err := strconv.Atoi(diskGroup.PROPERTY[3].Text)
-		if err != nil {
-			return totalDiskGroups, fmt.Errorf("error convert Size count to int: %v", err)
-		}
-		singleDiskGroup.Size = (i / 2) * 1000 //because raid 10
-
-		i, err = strconv.Atoi(diskGroup.PROPERTY[5].Text)
-		if err != nil {
-			return totalDiskGroups, fmt.Errorf("error convert Free count to int: %v", err)
-		}
-		singleDiskGroup.Free = (i / 2) * 1000
-
-		singleDiskGroup.Status = diskGroup.PROPERTY[28].Text
-
-		singleDiskGroup.Health = diskGroup.PROPERTY[77].Text
-
 		totalDiskGroups.Data = append(totalDiskGroups.Data, singleDiskGroup)
 	}
 
+	totalDiskGroups.Data = append(totalDiskGroups.Data, fakeSingleEntity)
+
 	return totalDiskGroups, nil
+}
+
+func GetValuesByDiskGroup(session *ssh.Session, c *config.Config, diskGroupName, param string) (string, error) {
+	result := map[string]any{}
+
+	v, err := getRawData(session, "DiskGroups", "show disk-groups", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	if err != nil {
+		return "", fmt.Errorf("%s", err)
+	}
+
+	var XMLData DiskGroups = DiskGroups{}
+	err = xml.Unmarshal([]byte(v), &XMLData)
+	if err != nil {
+		return "", fmt.Errorf("error XML unmarshal DiskGroups (specific): %v", err)
+	}
+
+	for _, i := range XMLData.OBJECT {
+		if i.PROPERTY[0].Text == diskGroupName {
+			s, err := strconv.Atoi(i.PROPERTY[3].Text)
+			if err != nil {
+				return "", fmt.Errorf("%s", err)
+			}
+			result["Size"] = (s / 2) * 1000
+
+			s, err = strconv.Atoi(i.PROPERTY[5].Text)
+			if err != nil {
+				return "", fmt.Errorf("%s", err)
+			}
+			result["Free"] = (s / 2) * 1000
+
+			result["Status"] = i.PROPERTY[28].Text
+
+			result["Health"] = i.PROPERTY[77].Text
+		}
+	}
+
+	return fmt.Sprintf("%v", result[param]), nil
 }

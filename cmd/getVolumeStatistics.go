@@ -3,7 +3,7 @@ package cmd
 import (
 	"encoding/xml"
 	"fmt"
-	"strconv"
+	"mon-dell-me4012/config"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -40,46 +40,62 @@ type VolumeStatistic struct {
 
 type singleVolume struct {
 	Name string `json:"{#NAME}"`
-	BPS  int    `json:"{#BPS}"`
-	IOPS int    `json:"{#IOPS}"`
 }
 
 type totalVolumes struct {
-	Data []singleVolume `json:"data"`
+	Data []any `json:"data"`
 }
 
-func GetVolumeStatistics(session *ssh.Session) (totalVolumes, error) {
-	buff, err := ExecCommandOnDevice(session, "show volume-statistics")
+func DiscoveryVolumeStatistics(session *ssh.Session, c *config.Config) (totalVolumes, error) {
+	v, err := getRawData(session, "VolumeStatistics", "show volume-statistics", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
-		return totalVolumes{}, fmt.Errorf("%v", err)
+		return totalVolumes{}, fmt.Errorf("%s", err)
 	}
 
-	var volumeStatistic VolumeStatistic
-	err = xml.Unmarshal([]byte(buff.String()), &volumeStatistic)
+	var XMLData VolumeStatistic = VolumeStatistic{}
+	err = xml.Unmarshal([]byte(v), &XMLData)
 	if err != nil {
-		return totalVolumes{}, fmt.Errorf("error XML unmarshal: %v", err)
+		return totalVolumes{}, fmt.Errorf("error XML unmarshal VolumeStatistics (discovery): %v", err)
 	}
 
+	var fakeSingleEntity fakeSingleEntity
 	var totalVolumes totalVolumes
 	var singleVolume singleVolume
-	for _, volume := range volumeStatistic.OBJECT {
+	for _, volume := range XMLData.OBJECT {
 		singleVolume.Name = volume.PROPERTY[0].Text
 		if singleVolume.Name == "Success" {
 			continue
 		}
 
-		singleVolume.BPS, err = strconv.Atoi(volume.PROPERTY[3].Text)
-		if err != nil {
-			return totalVolumes, fmt.Errorf("error convert BPS count to int: %v", err)
-		}
-
-		singleVolume.IOPS, err = strconv.Atoi(volume.PROPERTY[4].Text)
-		if err != nil {
-			return totalVolumes, fmt.Errorf("error convert IOPS count to int: %v", err)
-		}
-
 		totalVolumes.Data = append(totalVolumes.Data, singleVolume)
 	}
 
+	totalVolumes.Data = append(totalVolumes.Data, fakeSingleEntity)
+
 	return totalVolumes, nil
+}
+
+func GetValuesByVolume(session *ssh.Session, c *config.Config, volumeName, param string) (string, error) {
+	result := map[string]any{}
+
+	v, err := getRawData(session, "VolumeStatistics", "show volume-statistics", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	if err != nil {
+		return "", fmt.Errorf("%s", err)
+	}
+
+	var XMLData VolumeStatistic = VolumeStatistic{}
+	err = xml.Unmarshal([]byte(v), &XMLData)
+	if err != nil {
+		return "", fmt.Errorf("error XML unmarshal VolumeStatistics (specific): %v", err)
+	}
+
+	for _, i := range XMLData.OBJECT {
+		if i.PROPERTY[0].Text == volumeName {
+			result["BPS"] = i.PROPERTY[3].Text
+
+			result["IOPS"] = i.PROPERTY[4].Text
+		}
+	}
+
+	return fmt.Sprintf("%v", result[param]), nil
 }

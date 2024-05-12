@@ -8,3 +8,7 @@
 go.work
 .vscode
 *.log
+config.yaml
+config.yml
+mon-dell-me4012.log
+mon-dell-me4012
