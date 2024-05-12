@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"mon-dell-me4012/config"
+	"mon-dell-me4012/rds"
 	"strconv"
 
 	"golang.org/x/crypto/ssh"
@@ -49,7 +50,7 @@ type totalDiskGroups struct {
 }
 
 func DiscoveryDiskGroups(session *ssh.Session, c *config.Config) (totalDiskGroups, error) {
-	v, err := getRawData(session, "DiskGroups", "show disk-groups", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "DiskGroups", "show disk-groups", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return totalDiskGroups{}, fmt.Errorf("%s", err)
 	}
@@ -82,7 +83,7 @@ func DiscoveryDiskGroups(session *ssh.Session, c *config.Config) (totalDiskGroup
 func GetValuesByDiskGroup(session *ssh.Session, c *config.Config, diskGroupName, param string) (string, error) {
 	result := map[string]any{}
 
-	v, err := getRawData(session, "DiskGroups", "show disk-groups", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "DiskGroups", "show disk-groups", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return "", fmt.Errorf("%s", err)
 	}

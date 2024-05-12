@@ -33,25 +33,25 @@ func GetAndPrintMetricData(metricData interface{}) {
 	fmt.Println(string(jsonResult))
 }
 
-func getRawData(session *ssh.Session, entity, SSHcommand string, EXs, EXd int) (string, error) {
-	s, _ := rds.RedisGet(rds.R, entity)
+func getRawData(session *ssh.Session, rc *rds.RedisCache, entity, SSHcommand string, EXs, EXd int) (string, error) {
+	s, _ := rc.Get(rc.Client, entity)
 	if s == "" {
 		buff, err := execCommandOnDevice(session, SSHcommand)
 		if err != nil {
 			return "", fmt.Errorf("error exec '%s' SSH commend: %s", SSHcommand, err)
 		}
 
-		err = rds.RedisSet(rds.R, entity, buff.String(), EXd)
+		err = rc.Set(rc.Client, entity, buff.String(), EXd)
 		if err != nil {
 			return "", fmt.Errorf("error setting %s data to Redis: %s", entity, err)
 		}
 
-		err = rds.RedisSet(rds.R, fmt.Sprintf("SSHConnectionBlockFrom%s", entity), "yes", EXs)
+		err = rc.Set(rc.Client, fmt.Sprintf("SSHConnectionBlockFrom%s", entity), "yes", EXs)
 		if err != nil {
 			return "", fmt.Errorf("error setting SSHConnectionBlock data to Redis: %s", err)
 		}
 
-		s, err = rds.RedisGet(rds.R, entity)
+		s, err = rc.Get(rc.Client, entity)
 		if err != nil {
 			return "", fmt.Errorf("error getting %s data from Redis after SET: %s", entity, err)
 		}

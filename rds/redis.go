@@ -11,7 +11,11 @@ import (
 	"github.com/go-redis/redis"
 )
 
-var R *redis.Client = &redis.Client{}
+var R *RedisCache = &RedisCache{}
+
+type RedisCache struct {
+	Client *redis.Client
+}
 
 func RedisInit(c *config.Config) *redis.Client {
 	client := redis.NewClient(&redis.Options{
@@ -28,8 +32,8 @@ func RedisInit(c *config.Config) *redis.Client {
 	return client
 }
 
-func RedisSet(r *redis.Client, k, v string, e int) error {
-	err := r.Set(k, v, time.Duration(e)*time.Second).Err()
+func (r *RedisCache) Set(rc *redis.Client, k, v string, e int) error {
+	err := rc.Set(k, v, time.Duration(e)*time.Second).Err()
 	if err != nil {
 		return fmt.Errorf("redis SET error: %s", err)
 	}
@@ -37,8 +41,8 @@ func RedisSet(r *redis.Client, k, v string, e int) error {
 	return nil
 }
 
-func RedisGet(r *redis.Client, k string) (string, error) {
-	v, err := r.Get(k).Result()
+func (r *RedisCache) Get(rc *redis.Client, k string) (string, error) {
+	v, err := rc.Get(k).Result()
 	if err != nil {
 		return "", nil
 	}

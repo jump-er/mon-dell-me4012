@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"mon-dell-me4012/config"
+	"mon-dell-me4012/rds"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -47,7 +48,7 @@ type totalVolumes struct {
 }
 
 func DiscoveryVolumeStatistics(session *ssh.Session, c *config.Config) (totalVolumes, error) {
-	v, err := getRawData(session, "VolumeStatistics", "show volume-statistics", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "VolumeStatistics", "show volume-statistics", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return totalVolumes{}, fmt.Errorf("%s", err)
 	}
@@ -78,7 +79,7 @@ func DiscoveryVolumeStatistics(session *ssh.Session, c *config.Config) (totalVol
 func GetValuesByVolume(session *ssh.Session, c *config.Config, volumeName, param string) (string, error) {
 	result := map[string]any{}
 
-	v, err := getRawData(session, "VolumeStatistics", "show volume-statistics", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "VolumeStatistics", "show volume-statistics", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return "", fmt.Errorf("%s", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"mon-dell-me4012/config"
+	"mon-dell-me4012/rds"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -46,7 +47,7 @@ type totalSensorStatuses struct {
 }
 
 func DiscoverySensorStatus(session *ssh.Session, c *config.Config) (totalSensorStatuses, error) {
-	v, err := getRawData(session, "SensorStatus", "show sensor-status", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "SensorStatus", "show sensor-status", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return totalSensorStatuses{}, fmt.Errorf("%s", err)
 	}
@@ -79,7 +80,7 @@ func DiscoverySensorStatus(session *ssh.Session, c *config.Config) (totalSensorS
 func GetValuesBySensorStatus(session *ssh.Session, c *config.Config, sensorStatusName, param string) (string, error) {
 	result := map[string]any{}
 
-	v, err := getRawData(session, "SensorStatus", "show sensor-status", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "SensorStatus", "show sensor-status", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return "", fmt.Errorf("%s", err)
 	}

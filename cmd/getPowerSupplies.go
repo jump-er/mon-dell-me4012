@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"mon-dell-me4012/config"
+	"mon-dell-me4012/rds"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -48,7 +49,7 @@ type totalPowerSupplies struct {
 }
 
 func DiscoveryPowerSupplies(session *ssh.Session, c *config.Config) (totalPowerSupplies, error) {
-	v, err := getRawData(session, "PowerSupplies", "show power-supplies", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "PowerSupplies", "show power-supplies", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return totalPowerSupplies{}, fmt.Errorf("%s", err)
 	}
@@ -81,7 +82,7 @@ func DiscoveryPowerSupplies(session *ssh.Session, c *config.Config) (totalPowerS
 func GetValuesByPowerSupplie(session *ssh.Session, c *config.Config, powerSupplieName, param string) (string, error) {
 	result := map[string]any{}
 
-	v, err := getRawData(session, "PowerSupplies", "show power-supplies", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
+	v, err := getRawData(session, rds.R, "PowerSupplies", "show power-supplies", c.Redis.SSHBlockExpireKeyTime, c.Redis.DataExpireKeyTime)
 	if err != nil {
 		return "", fmt.Errorf("%s", err)
 	}

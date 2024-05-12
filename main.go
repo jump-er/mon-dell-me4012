@@ -23,7 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	rds.R = rds.RedisInit(c)
+	rds.R.Client = rds.RedisInit(c)
 
 	discovery := flag.Bool("discovery", false, "discovery behavior")
 	discoveryName := flag.String("discovery_name", "", "name for specific discovery")
@@ -33,7 +33,7 @@ func main() {
 	flag.Parse()
 
 	var session *ssh.Session = &ssh.Session{}
-	if !isSSHConnectionBlocked(getEntityName(discoveryName, metricGroup)) {
+	if !isSSHConnectionBlocked(getEntityName(discoveryName, metricGroup), rds.R) {
 		hostKeyCallback, err := config.SetInsecureIgnoreHostKeyOption(c)
 		if err != nil {
 			log.Fatal(err)
@@ -126,8 +126,8 @@ func main() {
 	}
 }
 
-func isSSHConnectionBlocked(entity string) bool {
-	SSHConnectionBlock, err := rds.RedisGet(rds.R, fmt.Sprintf("SSHConnectionBlockFrom%s", entity))
+func isSSHConnectionBlocked(entity string, rc *rds.RedisCache) bool {
+	SSHConnectionBlock, err := rc.Get(rc.Client, fmt.Sprintf("SSHConnectionBlockFrom%s", entity))
 	if err != nil {
 		log.Errorf("%s", err)
 	}
