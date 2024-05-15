@@ -100,13 +100,13 @@ func GetValuesByDiskGroup(session *ssh.Session, c *config.Config, diskGroupName,
 			if err != nil {
 				return "", fmt.Errorf("%s", err)
 			}
-			result["Size"] = (s / 2) * 1000
+			result["Size"] = (s / 2) * 1024
 
 			s, err = strconv.Atoi(i.PROPERTY[5].Text)
 			if err != nil {
 				return "", fmt.Errorf("%s", err)
 			}
-			result["Free"] = (s / 2) * 1000
+			result["Free"] = (s / 2) * 1024
 
 			result["Status"] = i.PROPERTY[28].Text
 
